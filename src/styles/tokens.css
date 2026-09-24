@@ -1,0 +1,72 @@
+/* Design tokens. Light theme inspired by web.max.ru. */
+:root {
+  /* Colors */
+  --color-accent: #2d7dff;
+  --color-accent-hover: #1f6ae6;
+  --color-accent-active: #1a5bc7;
+  --color-accent-soft: #e6f0ff;
+  --color-on-accent: #ffffff;
+
+  --color-bg: #ffffff;
+  --color-bg-app: #eef1f5;
+  --color-bg-muted: #f5f6f8;
+  --color-bg-hover: #f1f3f6;
+  --color-bg-active: #e6f0ff;
+
+  --color-text: #1a1d21;
+  --color-text-secondary: #6b7280;
+  --color-text-tertiary: #9aa1ac;
+
+  --color-border: #e3e6eb;
+  --color-border-strong: #cfd4dc;
+
+  --color-bubble-in: #eef0f3;
+  --color-bubble-out: #d9e8ff;
+
+  --color-danger: #e5484d;
+  --color-danger-soft: #fdecec;
+  --color-success: #2d7dff;
+
+  --color-focus: rgba(45, 125, 255, 0.45);
+  --color-overlay: rgba(17, 24, 39, 0.4);
+
+  /* Avatar palette (picked by chat id hash) */
+  --avatar-1: #5b8def;
+  --avatar-2: #34b27b;
+  --avatar-3: #f2994a;
+  --avatar-4: #9b6bdf;
+  --avatar-5: #e86a8a;
+  --avatar-6: #3fb5c9;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --radius-full: 999px;
+
+  /* Spacing */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  /* Typography */
+  --font-family: system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-size-xs: 12px;
+  --font-size-sm: 13px;
+  --font-size-md: 15px;
+  --font-size-lg: 17px;
+  --font-size-xl: 22px;
+  --line-height: 1.4;
+
+  /* Layout */
+  --sidebar-width: 360px;
+  --header-height: 60px;
+  --shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.06);
+  --shadow-lg: 0 12px 40px rgba(17, 24, 39, 0.18);
+  --transition: 150ms ease;
+}
