@@ -1,0 +1,135 @@
+.page {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: var(--space-6) var(--space-6) var(--space-8);
+}
+
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2) var(--space-6);
+  margin-bottom: var(--space-6);
+}
+
+.top h1 {
+  font-size: var(--font-size-xl);
+}
+
+.event {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+}
+
+.event code {
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.section {
+  margin-bottom: var(--space-8);
+}
+
+.section h2 {
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-lg);
+}
+
+.note {
+  max-width: 760px;
+  margin-bottom: var(--space-3);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+
+.appFrame {
+  height: 640px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.cell h3 {
+  align-self: flex-start;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.panel {
+  align-items: stretch;
+}
+
+.panelBody {
+  height: 360px;
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.button {
+  height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  font-weight: 500;
+}
+
+.button:hover {
+  background: var(--color-bg-hover);
+}
+
+.bubbles {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  max-width: 720px;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg);
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: var(--space-4) var(--space-3) var(--space-6);
+  }
+
+  .appFrame {
+    height: min(640px, calc(100dvh - 32px));
+  }
+
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bubbles {
+    padding: var(--space-3);
+  }
+}
