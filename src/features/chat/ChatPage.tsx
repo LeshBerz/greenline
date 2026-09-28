@@ -10,6 +10,7 @@ import {
   useChatStore,
 } from '../../store/chatStore'
 import type { Credentials } from '../../types'
+import { isPersonalChat } from './isPersonalChat'
 import { resolveChat } from './resolveChat'
 
 export function ChatPage({ credentials }: { credentials: Credentials }) {
@@ -19,11 +20,25 @@ export function ChatPage({ credentials }: { credentials: Credentials }) {
   const messages = useChatStore((s) => s.messages)
   const activeChat = useChatStore(selectActiveChat) ?? null
   const activeMessages = useChatStore(selectActiveMessages)
-  const { receiveIncoming, openChat, setActiveChat, addOutgoing, resolveOutgoing, logout } =
-    useChatStore.getState()
+  const {
+    receiveIncoming,
+    updateOutgoingStatus,
+    openChat,
+    setActiveChat,
+    addOutgoing,
+    resolveOutgoing,
+    logout,
+  } = useChatStore.getState()
 
-  // Stops when the page unmounts on logout.
-  useNotificationPolling(client, receiveIncoming)
+  // Stops when the page unmounts on logout. Groups and channels are skipped (their
+  // notifications are still deleted from the queue by the polling loop).
+  useNotificationPolling(
+    client,
+    (message) => {
+      if (isPersonalChat(message.chatId)) receiveIncoming(message)
+    },
+    (update) => updateOutgoingStatus(update.idMessage, update.status),
+  )
 
   const [dialogOpen, setDialogOpen] = useState(false)
   const [dialogError, setDialogError] = useState<string>()
