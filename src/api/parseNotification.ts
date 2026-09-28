@@ -19,7 +19,9 @@ function extractText(messageData: Json): string | undefined {
       const data = messageData.textMessageData
       return isObject(data) ? str(data.textMessage) : undefined
     }
-    case 'extendedTextMessage': {
+    // A reply to a message ("quotedMessage") carries its text the same way as extendedTextMessage.
+    case 'extendedTextMessage':
+    case 'quotedMessage': {
       const data = messageData.extendedTextMessageData
       return isObject(data) ? str(data.text) : undefined
     }

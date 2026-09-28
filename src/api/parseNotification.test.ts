@@ -49,6 +49,15 @@ describe('parseNotification', () => {
     expect(parseNotification(raw)?.message?.text).toBe('See https://example.com')
   })
 
+  it('parses a reply (quotedMessage) as text', () => {
+    const raw = incoming({
+      typeMessage: 'quotedMessage',
+      extendedTextMessageData: { text: 'Reply', stanzaId: 'MSG-0', participant: '10000000' },
+      quotedMessage: { stanzaId: 'MSG-0', typeMessage: 'textMessage', textMessage: 'Hello' },
+    })
+    expect(parseNotification(raw)?.message?.text).toBe('Reply')
+  })
+
   it('keeps a numeric Telegram chatId as is and falls back to chatName', () => {
     const raw = incoming(
       { typeMessage: 'textMessage', textMessageData: { textMessage: 'Hi' } },
