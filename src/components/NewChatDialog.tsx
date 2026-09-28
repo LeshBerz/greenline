@@ -10,24 +10,24 @@ export interface NewChatDialogProps {
   error?: string
 }
 
-export function NewChatDialog({ open, onSubmit, onClose, error }: NewChatDialogProps) {
+export function NewChatDialog({ open, ...props }: NewChatDialogProps) {
+  // Mounting the form on every open gives it fresh state, so there is nothing to reset.
+  return open ? <NewChatForm {...props} /> : null
+}
+
+function NewChatForm({ onSubmit, onClose, error }: Omit<NewChatDialogProps, 'open'>) {
   const id = useId()
   const [phone, setPhone] = useState('')
   const [localError, setLocalError] = useState<string>()
   const dialogRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
-  // Reset the form on every open, focus the input, and return focus to the opener on close.
+  // Focus the input on open and return focus to the opener on close.
   useEffect(() => {
-    if (!open) return
-    setPhone('')
-    setLocalError(undefined)
     const opener = document.activeElement as HTMLElement | null
     inputRef.current?.focus()
     return () => opener?.focus?.()
-  }, [open])
-
-  if (!open) return null
+  }, [])
 
   const shownError = localError ?? error
 
