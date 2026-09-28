@@ -8,6 +8,11 @@ export { GreenApiError }
 export interface GreenApiClient {
   /** GET getStateInstance. Used on login to validate credentials. */
   getStateInstance(): Promise<InstanceState>
+  /**
+   * POST checkAccount (Telegram). Resolves a normalized phone to the messenger's chatId,
+   * or null when the number has no account (or hides it via privacy settings).
+   */
+  checkAccount(phone: string): Promise<string | null>
   /** POST sendMessage. Returns idMessage. */
   sendMessage(chatId: string, text: string): Promise<{ idMessage: string }>
   /**
@@ -89,6 +94,23 @@ export function createGreenApiClient(credentials: Credentials): GreenApiClient {
       const data = await request(url('getStateInstance'))
       const state = (data as { stateInstance?: unknown } | null)?.stateInstance
       return KNOWN_STATES.find((known) => known === state) ?? 'unknown'
+    },
+
+    async checkAccount(phone) {
+      const data = await request(url('checkAccount'), {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        // The API expects the phone as an integer.
+        body: JSON.stringify({ phoneNumber: Number(phone) }),
+      })
+      const body = (data ?? {}) as { exist?: unknown; chatId?: unknown; reason?: unknown }
+      if (body.exist === true && typeof body.chatId === 'string' && body.chatId !== '') {
+        return body.chatId
+      }
+      if (body.exist === false) return null
+      // e.g. { status: false, reason: "instance is starting or not authorized" }
+      const reason = typeof body.reason === 'string' ? `: ${body.reason}` : ''
+      throw new GreenApiError(`GREEN-API не смог проверить номер${reason}`)
     },
 
     async sendMessage(chatId, text) {

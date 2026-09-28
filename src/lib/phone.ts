@@ -15,8 +15,9 @@ export function isValidPhone(phone: string): boolean {
 
 /**
  * Builds a GREEN-API chatId from a normalized phone, e.g. "79001234567@c.us".
- * WhatsApp uses this format natively; Telegram accepts it for sending (legacy format),
- * but reports incoming chats by a numeric id. See the API role report.
+ * WhatsApp uses this format natively. Telegram accepts it for sending (legacy format) but
+ * reports incoming chats by a numeric id, so the app resolves the id with checkAccount first
+ * and uses this only as a fallback.
  */
 export function toChatId(phone: string): string {
   return `${phone}@c.us`

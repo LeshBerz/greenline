@@ -49,6 +49,32 @@ describe('createGreenApiClient', () => {
     })
   })
 
+  describe('checkAccount', () => {
+    it('posts the phone as an integer and returns chatId', async () => {
+      respond({ exist: true, chatId: '10000000', phoneNumber: 79001234567, fromCache: true })
+      const client = createGreenApiClient(credentials)
+      await expect(client.checkAccount('79001234567')).resolves.toBe('10000000')
+      const [url, init] = fetchMock.mock.calls[0]
+      expect(url).toBe(`${BASE}/checkAccount/test-token`)
+      expect(init?.method).toBe('POST')
+      expect(JSON.parse(init?.body as string)).toEqual({ phoneNumber: 79001234567 })
+    })
+
+    it('returns null when the number has no account', async () => {
+      respond({ exist: false, chatId: '' })
+      await expect(createGreenApiClient(credentials).checkAccount('79001234567')).resolves.toBe(
+        null,
+      )
+    })
+
+    it('throws with the reason for an unexpected body', async () => {
+      respond({ status: false, reason: 'instance is starting or not authorized' })
+      await expect(
+        createGreenApiClient(credentials).checkAccount('79001234567'),
+      ).rejects.toThrow(/instance is starting/)
+    })
+  })
+
   describe('sendMessage', () => {
     it('posts chatId and message as JSON and returns idMessage', async () => {
       respond({ idMessage: 'BAE5F4886AFFEEEE' })
