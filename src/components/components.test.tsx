@@ -1,6 +1,7 @@
 // Behaviour tests with plain react-dom (no testing-library in the project).
 import { act, type ReactNode } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
+import { MessageBubble } from './MessageBubble'
 import { MessageInput } from './MessageInput'
 import { NewChatDialog } from './NewChatDialog'
 import { LoginForm } from './LoginForm'
@@ -46,7 +47,7 @@ function key(el: Element, k: string, init: KeyboardEventInit = {}) {
 describe('MessageInput', () => {
   it('disables send for blank text', () => {
     render(<MessageInput onSend={vi.fn()} />)
-    const button = container.querySelector('button')!
+    const button = container.querySelector<HTMLButtonElement>('button[aria-label="Отправить"]')!
     expect(button.disabled).toBe(true)
     type(container.querySelector('textarea')!, '   ')
     expect(button.disabled).toBe(true)
@@ -69,6 +70,37 @@ describe('MessageInput', () => {
     type(textarea, 'строка')
     key(textarea, 'Enter', { shiftKey: true })
     expect(onSend).not.toHaveBeenCalled()
+  })
+
+  it('inserts an emoji at the caret and keeps the picker open', () => {
+    render(<MessageInput onSend={vi.fn()} />)
+    const textarea = container.querySelector('textarea')!
+    type(textarea, 'ab')
+    textarea.setSelectionRange(1, 1)
+    act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Эмодзи"]')!.click())
+    act(() => container.querySelector<HTMLButtonElement>('button[aria-label="👍"]')!.click())
+    expect(textarea.value).toBe('a👍b')
+    expect(textarea.selectionStart).toBe(3)
+    expect(container.querySelector('[aria-label="Эмодзи"][role="dialog"]')).not.toBeNull()
+    key(document.body, 'Escape')
+    expect(container.querySelector('[role="dialog"]')).toBeNull()
+  })
+})
+
+describe('MessageBubble', () => {
+  const base = {
+    id: '1',
+    chatId: '10000000',
+    text: 'hi',
+    direction: 'outgoing' as const,
+    timestamp: 0,
+  }
+
+  it('shows one check when sent and two when read', () => {
+    render(<MessageBubble message={{ ...base, status: 'sent' }} />)
+    expect(container.querySelector('[aria-label="Отправлено"] path')).not.toBeNull()
+    render(<MessageBubble message={{ ...base, status: 'read' }} />)
+    expect(container.querySelectorAll('[aria-label="Прочитано"] path')).toHaveLength(2)
   })
 })
 
