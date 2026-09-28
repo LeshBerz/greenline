@@ -69,9 +69,9 @@ describe('createGreenApiClient', () => {
 
     it('throws with the reason for an unexpected body', async () => {
       respond({ status: false, reason: 'instance is starting or not authorized' })
-      await expect(
-        createGreenApiClient(credentials).checkAccount('79001234567'),
-      ).rejects.toThrow(/instance is starting/)
+      await expect(createGreenApiClient(credentials).checkAccount('79001234567')).rejects.toThrow(
+        /instance is starting/,
+      )
     })
   })
 
