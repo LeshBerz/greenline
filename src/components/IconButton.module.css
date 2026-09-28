@@ -1,0 +1,42 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  transition:
+    background-color var(--transition),
+    color var(--transition),
+    opacity var(--transition);
+}
+
+.ghost {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+.ghost:hover:not(:disabled) {
+  background: var(--color-bg-hover);
+  color: var(--color-text);
+}
+
+.accent {
+  background: var(--color-accent);
+  color: var(--color-on-accent);
+}
+
+.accent:hover:not(:disabled) {
+  background: var(--color-accent-hover);
+}
+
+.accent:active:not(:disabled) {
+  background: var(--color-accent-active);
+}
+
+.button:disabled {
+  opacity: 0.4;
+}
