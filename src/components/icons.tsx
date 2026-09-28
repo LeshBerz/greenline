@@ -100,6 +100,25 @@ export function CheckIcon(props: IconProps) {
   )
 }
 
+export function DoubleCheckIcon(props: IconProps) {
+  return (
+    <Icon strokeWidth={2.2} {...props}>
+      <path d="m2 12.5 4.5 4.5L16 7.5" />
+      <path d="m11.5 16.5.5.5L21.5 7.5" />
+    </Icon>
+  )
+}
+
+export function SmileIcon(props: IconProps) {
+  return (
+    <Icon {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M8.5 14.5a4.5 4.5 0 0 0 7 0" />
+      <path d="M9 9.5v.5M15 9.5v.5" />
+    </Icon>
+  )
+}
+
 export function AlertIcon(props: IconProps) {
   return (
     <Icon {...props}>

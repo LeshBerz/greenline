@@ -1,5 +1,5 @@
 import type { Message, MessageStatus } from '../types'
-import { AlertIcon, CheckIcon, ClockIcon } from './icons'
+import { AlertIcon, CheckIcon, ClockIcon, DoubleCheckIcon } from './icons'
 import { formatTime } from './format'
 import styles from './MessageBubble.module.css'
 
@@ -10,6 +10,8 @@ export interface MessageBubbleProps {
 const STATUS_LABELS: Partial<Record<MessageStatus, string>> = {
   pending: 'Отправляется',
   sent: 'Отправлено',
+  delivered: 'Доставлено',
+  read: 'Прочитано',
   failed: 'Не отправлено. Проверьте соединение и данные инстанса',
 }
 
@@ -24,7 +26,8 @@ function StatusIcon({ status }: { status: MessageStatus }) {
       title={label}
     >
       {status === 'pending' && <ClockIcon size={13} />}
-      {status === 'sent' && <CheckIcon size={15} />}
+      {(status === 'sent' || status === 'delivered') && <CheckIcon size={15} />}
+      {status === 'read' && <DoubleCheckIcon size={17} />}
       {status === 'failed' && <AlertIcon size={15} />}
     </span>
   )
