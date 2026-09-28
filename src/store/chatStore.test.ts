@@ -206,6 +206,55 @@ describe('receiveIncoming', () => {
   })
 })
 
+describe('read receipts', () => {
+  function sent(idMessage: string, timestamp = 500) {
+    vi.useFakeTimers()
+    vi.setSystemTime(timestamp)
+    const tempId = store().addOutgoing(CHAT, idMessage)
+    store().resolveOutgoing(tempId, { status: 'sent', idMessage })
+    vi.useRealTimers()
+  }
+  const statuses = () => store().messages[CHAT].map((m) => m.status)
+
+  it('moves statuses forward only', () => {
+    sent('out-1')
+    store().updateOutgoingStatus('out-1', 'delivered')
+    expect(statuses()).toEqual(['delivered'])
+    store().updateOutgoingStatus('out-1', 'read')
+    store().updateOutgoingStatus('out-1', 'delivered')
+    store().updateOutgoingStatus('out-1', 'failed')
+    expect(statuses()).toEqual(['read'])
+  })
+
+  it('ignores unknown ids and incoming messages', () => {
+    store().receiveIncoming(incoming())
+    const before = store().messages
+    store().updateOutgoingStatus('in-1', 'read')
+    store().updateOutgoingStatus('nope', 'read')
+    expect(store().messages).toBe(before)
+  })
+
+  it('a reply marks earlier sent messages of the chat as read', () => {
+    sent('out-1', 500)
+    sent('out-2', 2_000)
+    store().receiveIncoming(incoming({ timestamp: 1_000 }))
+    expect(store().messages[CHAT].map((m) => [m.id, m.status])).toEqual([
+      ['out-1', 'read'],
+      ['in-1', 'received'],
+      ['out-2', 'sent'],
+    ])
+  })
+
+  it('a reply does not touch failed messages or other chats', () => {
+    const tempId = store().addOutgoing(CHAT, 'x')
+    store().resolveOutgoing(tempId, { status: 'failed' })
+    store().addOutgoing('111@c.us', 'y')
+    store().receiveIncoming(incoming({ timestamp: Date.now() + 1_000 }))
+    expect(statuses()).toEqual(['failed', 'received'])
+    expect(store().messages['111@c.us'][0].status).toBe('pending')
+  })
+})
+
 describe('selectors', () => {
   it('sorts chats by last message, newest first; empty chats stay on top', () => {
     store().receiveIncoming(incoming({ idMessage: '1', chatId: 'old@c.us', timestamp: 1_000 }))

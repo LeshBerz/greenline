@@ -29,7 +29,17 @@ export interface ChatState {
   /** Updates a pending message after the send result is known (id may be replaced by idMessage). */
   resolveOutgoing(tempId: string, result: { status: MessageStatus; idMessage?: string }): void
 
-  /** Adds an incoming message; creates the chat if needed; dedupes by idMessage; bumps unread if chat is not active. */
+  /**
+   * Applies a status webhook to a sent message found by idMessage. Statuses only move forward
+   * (sent -> delivered -> read), so a late "delivered" never overrides "read".
+   */
+  updateOutgoingStatus(idMessage: string, status: MessageStatus): void
+
+  /**
+   * Adds an incoming message; creates the chat if needed; dedupes by idMessage; bumps unread if
+   * chat is not active. A reply means the contact has seen the chat, so earlier sent messages
+   * of this chat become "read" (works even without status webhooks).
+   */
   receiveIncoming(message: IncomingTextMessage): void
 }
 
@@ -60,6 +70,16 @@ function resetUnread(chats: Chat[], chatId: string | null): Chat[] {
   return chats.map((c) =>
     c.chatId === chatId && c.unreadCount !== 0 ? { ...c, unreadCount: 0 } : c,
   )
+}
+
+const DELIVERY_RANK: Partial<Record<MessageStatus, number>> = { sent: 1, delivered: 2, read: 3 }
+
+/** True if an outgoing message may move from `current` to `next`. */
+function canAdvance(current: MessageStatus, next: MessageStatus): boolean {
+  if (next === 'failed') return current === 'pending' || current === 'sent'
+  const from = DELIVERY_RANK[current] ?? (current === 'failed' ? 0 : undefined)
+  const to = DELIVERY_RANK[next]
+  return from !== undefined && to !== undefined && to > from
 }
 
 /** Appends a message keeping the list ordered by timestamp (stable for equal timestamps). */
@@ -149,11 +169,32 @@ export const useChatStore = create<ChatState>()(
         }
       },
 
+      updateOutgoingStatus(idMessage, status) {
+        set((state) => {
+          for (const [chatId, list] of Object.entries(state.messages)) {
+            const index = list.findIndex((m) => m.id === idMessage && m.direction === 'outgoing')
+            if (index === -1) continue
+            if (!canAdvance(list[index].status, status)) return state
+            const next = list.map((m, i) => (i === index ? { ...m, status } : m))
+            return { messages: { ...state.messages, [chatId]: next } }
+          }
+          return state
+        })
+      },
+
       receiveIncoming(incoming) {
         set((state) => {
           const { chatId } = incoming
-          const list = state.messages[chatId] ?? []
-          if (list.some((m) => m.id === incoming.idMessage)) return state
+          const known = state.messages[chatId] ?? []
+          if (known.some((m) => m.id === incoming.idMessage)) return state
+          const list = known.map((m) =>
+            m.direction === 'outgoing' &&
+            m.timestamp <= incoming.timestamp &&
+            canAdvance(m.status, 'read') &&
+            m.status !== 'failed'
+              ? { ...m, status: 'read' as const }
+              : m,
+          )
 
           const isActive = state.activeChatId === chatId
           const existing = state.chats.find((c) => c.chatId === chatId)
