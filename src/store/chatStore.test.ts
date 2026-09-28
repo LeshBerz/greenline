@@ -62,6 +62,34 @@ describe('openChat / setActiveChat', () => {
     expect(store().activeChatId).toBe(CHAT)
   })
 
+  it('uses a resolved chatId (Telegram) instead of phone@c.us', () => {
+    const chatId = store().openChat('+7 900 123 45 67', '10000000')
+    expect(chatId).toBe('10000000')
+    expect(store().activeChatId).toBe('10000000')
+    expect(store().chats).toEqual([
+      { chatId: '10000000', phone: '79001234567', title: '79001234567', unreadCount: 0 },
+    ])
+  })
+
+  it('a reply to a resolved chatId lands in the same chat', () => {
+    store().openChat('79001234567', '10000000')
+    store().setActiveChat(null)
+    store().receiveIncoming(incoming({ chatId: '10000000' }))
+    expect(store().chats).toHaveLength(1)
+    expect(store().chats[0]).toEqual(
+      expect.objectContaining({ chatId: '10000000', title: 'Alice', unreadCount: 1 }),
+    )
+  })
+
+  it('attaches the phone to a chat that was created by an incoming message', () => {
+    store().receiveIncoming(incoming({ chatId: '10000000', senderName: undefined }))
+    expect(store().chats[0].title).toBe('10000000')
+    store().openChat('79001234567', '10000000')
+    expect(store().chats).toEqual([
+      { chatId: '10000000', phone: '79001234567', title: '79001234567', unreadCount: 0 },
+    ])
+  })
+
   it('setActiveChat resets unread of the selected chat only', () => {
     store().receiveIncoming(incoming())
     store().receiveIncoming(incoming({ idMessage: 'in-2', chatId: '111@c.us' }))

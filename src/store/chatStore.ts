@@ -15,8 +15,13 @@ export interface ChatState {
   login(credentials: Credentials): void
   logout(): void
 
-  /** Creates the chat if it does not exist and makes it active. Returns its chatId. */
-  openChat(phone: string): string
+  /**
+   * Creates the chat if it does not exist and makes it active. Returns its chatId.
+   * `chatId` is the id resolved by the messenger (Telegram: checkAccount); defaults to
+   * toChatId(phone). If a chat with that id already exists (e.g. created by an incoming
+   * message), it gets the phone number.
+   */
+  openChat(phone: string, chatId?: string): string
   setActiveChat(chatId: string | null): void
 
   /** Adds an outgoing message with status "pending". Returns the temporary id. */
@@ -85,13 +90,17 @@ export const useChatStore = create<ChatState>()(
         set({ ...emptyState })
       },
 
-      openChat(phone) {
+      openChat(phone, resolvedChatId) {
         const normalized = normalizePhone(phone)
-        const chatId = toChatId(normalized)
+        const chatId = resolvedChatId ?? toChatId(normalized)
         set((state) => {
           const exists = state.chats.some((c) => c.chatId === chatId)
           const chats = exists
-            ? resetUnread(state.chats, chatId)
+            ? resetUnread(state.chats, chatId).map((c) =>
+                c.chatId === chatId && c.phone !== normalized
+                  ? { ...c, phone: normalized, title: c.title === c.phone ? normalized : c.title }
+                  : c,
+              )
             : [newChat(chatId, normalized), ...state.chats]
           return { chats, activeChatId: chatId }
         })
