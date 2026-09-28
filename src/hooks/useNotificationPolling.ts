@@ -1,7 +1,7 @@
 // Owner: State role.
 import { useEffect, useRef } from 'react'
 import type { GreenApiClient } from '../api/greenApi'
-import type { IncomingTextMessage } from '../types'
+import type { IncomingTextMessage, OutgoingStatusUpdate } from '../types'
 import { runPollingLoop } from './pollingLoop'
 
 // Tail of the currently running loop. A new loop starts only after the previous one has fully
@@ -16,12 +16,15 @@ let lastLoop: Promise<void> = Promise.resolve()
 export function useNotificationPolling(
   client: GreenApiClient | null,
   onMessage: (message: IncomingTextMessage) => void,
+  onStatus?: (update: OutgoingStatusUpdate) => void,
 ): void {
-  // Latest callback without restarting the loop.
+  // Latest callbacks without restarting the loop.
   const onMessageRef = useRef(onMessage)
+  const onStatusRef = useRef(onStatus)
   useEffect(() => {
     onMessageRef.current = onMessage
-  }, [onMessage])
+    onStatusRef.current = onStatus
+  }, [onMessage, onStatus])
 
   useEffect(() => {
     if (!client) return
@@ -30,7 +33,9 @@ export function useNotificationPolling(
     lastLoop = lastLoop.then(() =>
       signal.aborted
         ? undefined
-        : runPollingLoop(client, (message) => onMessageRef.current(message), signal),
+        : runPollingLoop(client, (message) => onMessageRef.current(message), signal, {
+            onStatus: (update) => onStatusRef.current?.(update),
+          }),
     )
     return () => controller.abort()
   }, [client])
