@@ -26,7 +26,8 @@ export function getInitials(title: string): string {
   if (!trimmed) return '?'
   if (/^\+?[\d\s()-]+$/.test(trimmed)) return trimmed.replace(/\D/g, '').slice(-2) || '#'
   const words = trimmed.split(/\s+/).filter(Boolean)
-  const letters = words.length > 1 ? words[0][0] + words[1][0] : Array.from(words[0]).slice(0, 2).join('')
+  const letters =
+    words.length > 1 ? words[0][0] + words[1][0] : Array.from(words[0]).slice(0, 2).join('')
   return letters.toUpperCase()
 }
 
@@ -47,8 +48,18 @@ export function formatPhone(phone: string): string {
 }
 
 const MONTHS = [
-  'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
-  'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
+  'января',
+  'февраля',
+  'марта',
+  'апреля',
+  'мая',
+  'июня',
+  'июля',
+  'августа',
+  'сентября',
+  'октября',
+  'ноября',
+  'декабря',
 ]
 
 /** Day divider label: "Сегодня", "Вчера", "12 сентября" or "12 сентября 2025". */

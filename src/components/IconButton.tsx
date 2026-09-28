@@ -8,7 +8,14 @@ export interface IconButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonEle
   variant?: 'ghost' | 'accent'
 }
 
-export function IconButton({ label, children, variant = 'ghost', className, type, ...rest }: IconButtonProps) {
+export function IconButton({
+  label,
+  children,
+  variant = 'ghost',
+  className,
+  type,
+  ...rest
+}: IconButtonProps) {
   return (
     <button
       type={type ?? 'button'}

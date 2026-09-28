@@ -6,12 +6,14 @@
 **Твои файлы:** `src/api/**`, `src/lib/phone.ts`, тесты рядом (`*.test.ts`).
 
 ## Документация
+
 - SendMessage: https://green-api.com/v3/docs/api/sending/SendMessage/
 - HTTP API (ReceiveNotification / DeleteNotification): https://green-api.com/v3/docs/api/receiving/technology-http-api/
 - GetStateInstance и формат вебхука `incomingMessageReceived`: найди в той же документации.
 - Формат URL: `{apiUrl}/waInstance{idInstance}/{method}/{apiTokenInstance}`. Сверься с документацией.
 
 ## Что сделать
+
 1. `createGreenApiClient(credentials)` в `src/api/greenApi.ts` по интерфейсу `GreenApiClient`:
    - `getStateInstance()` возвращает `stateInstance`, неизвестные значения превращаются в `'unknown'`.
    - `sendMessage(chatId, text)`: `POST` с JSON `{ chatId, message }`, возвращает `{ idMessage }`.
@@ -35,9 +37,11 @@
    предложи dev-proxy в `vite.config.ts` (сам файл не правь, это чужая зона).
 
 ## Не делать
+
 - Не трогать UI, стор, `App.tsx`, `package.json`.
 - Не хранить реальные ключи нигде.
 
 ## Готово, когда
+
 - `npm run build` и `npm test` зелёные, покрыты все методы и ветви парсинга.
 - Отчёт: API, формат `chatId`, CORS, открытые вопросы.

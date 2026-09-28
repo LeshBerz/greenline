@@ -34,14 +34,20 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   const outgoing = message.direction === 'outgoing'
   return (
     <div className={[styles.row, outgoing ? styles.outgoing : styles.incoming].join(' ')}>
-      <div className={[styles.bubble, message.status === 'failed' && styles.bubbleFailed].filter(Boolean).join(' ')}>
+      <div
+        className={[styles.bubble, message.status === 'failed' && styles.bubbleFailed]
+          .filter(Boolean)
+          .join(' ')}
+      >
         <span className={styles.text}>
           {message.text}
           {/* Reserves room on the last line for the absolutely positioned time/status. */}
           <span className={outgoing ? styles.spacerOut : styles.spacerIn} aria-hidden="true" />
         </span>
         <span className={styles.meta}>
-          <time dateTime={new Date(message.timestamp).toISOString()}>{formatTime(message.timestamp)}</time>
+          <time dateTime={new Date(message.timestamp).toISOString()}>
+            {formatTime(message.timestamp)}
+          </time>
           {outgoing && <StatusIcon status={message.status} />}
         </span>
       </div>

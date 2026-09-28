@@ -21,7 +21,13 @@ export const mockChats: Chat[] = [
 ]
 
 let seq = 0
-function msg(chatId: string, direction: Message['direction'], text: string, ago: number, status?: Message['status']): Message {
+function msg(
+  chatId: string,
+  direction: Message['direction'],
+  text: string,
+  ago: number,
+  status?: Message['status'],
+): Message {
   seq += 1
   return {
     id: `mock-${seq}`,
@@ -52,7 +58,12 @@ export const mockMessages: Record<string, Message[]> = {
       'Посмотрел, всё хорошо. Добавлю ещё пункт про деплой: сборка статическая, поэтому GitHub Pages подойдёт, а ключи инстанса пользователь вводит сам в браузере и они нигде не сохраняются дольше сессии.',
       30 * MIN,
     ),
-    msg(anna, 'outgoing', 'Ссылка: https://example.com/очень/длинная/ссылка/без/пробелов/которая/должна/переноситься/внутри/пузыря?query=1234567890', 20 * MIN),
+    msg(
+      anna,
+      'outgoing',
+      'Ссылка: https://example.com/очень/длинная/ссылка/без/пробелов/которая/должна/переноситься/внутри/пузыря?query=1234567890',
+      20 * MIN,
+    ),
     msg(anna, 'outgoing', 'Это сообщение ещё отправляется', 2 * MIN, 'pending'),
     msg(anna, 'outgoing', 'А это не удалось отправить', MIN, 'failed'),
   ],
@@ -63,7 +74,14 @@ export const mockMessages: Record<string, Message[]> = {
     msg(igor, 'incoming', 'Созвонимся вечером?', 15 * MIN),
   ],
   [phoneOnly]: [],
-  [longName]: [msg(longName, 'incoming', 'Ааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааа', 10 * DAY)],
+  [longName]: [
+    msg(
+      longName,
+      'incoming',
+      'Ааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааааа',
+      10 * DAY,
+    ),
+  ],
   [maria]: [msg(maria, 'outgoing', 'Не получилось отправить', 400 * DAY, 'failed')],
 }
 

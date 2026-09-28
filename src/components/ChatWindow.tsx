@@ -116,7 +116,12 @@ export function ChatWindow({
         )}
       </div>
 
-      <MessageInput key={chat.chatId} onSend={onSend} disabled={inputDisabled} autoFocus={autoFocusInput} />
+      <MessageInput
+        key={chat.chatId}
+        onSend={onSend}
+        disabled={inputDisabled}
+        autoFocus={autoFocusInput}
+      />
     </section>
   )
 }

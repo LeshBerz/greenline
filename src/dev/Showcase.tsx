@@ -40,13 +40,18 @@ function AppDemo({ onEvent }: { onEvent(text: string): void }) {
     if (!activeChatId) return
     const chatId = activeChatId
     const id = `local-${Date.now()}`
-    update(chatId, (l) => [...l, { id, chatId, text, direction: 'outgoing', status: 'pending', timestamp: Date.now() }])
+    update(chatId, (l) => [
+      ...l,
+      { id, chatId, text, direction: 'outgoing', status: 'pending', timestamp: Date.now() },
+    ])
     onEvent(`onSend(${JSON.stringify(text)})`)
     // Text containing "ошибка" fails; otherwise sent after a second, then a mock reply arrives.
     const failed = /ошибка|fail/i.test(text)
     timers.current.push(
       window.setTimeout(() => {
-        update(chatId, (l) => l.map((m) => (m.id === id ? { ...m, status: failed ? 'failed' : 'sent' } : m)))
+        update(chatId, (l) =>
+          l.map((m) => (m.id === id ? { ...m, status: failed ? 'failed' : 'sent' } : m)),
+        )
       }, 1000),
     )
     if (!failed) {
@@ -139,8 +144,9 @@ export function Showcase() {
       <section className={styles.section}>
         <h2>Главный экран (интерактивно)</h2>
         <p className={styles.note}>
-          Отправьте сообщение: сначала часики, через секунду галочка, потом мок-ответ. Текст со словом
-          «ошибка» станет failed. На ширине &lt; 768px виден либо список, либо чат с кнопкой «назад».
+          Отправьте сообщение: сначала часики, через секунду галочка, потом мок-ответ. Текст со
+          словом «ошибка» станет failed. На ширине &lt; 768px виден либо список, либо чат с кнопкой
+          «назад».
         </p>
         <div className={styles.appFrame}>
           <AppDemo onEvent={log} />

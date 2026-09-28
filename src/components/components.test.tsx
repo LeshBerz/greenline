@@ -27,7 +27,8 @@ function render(ui: ReactNode) {
 
 /** Sets a controlled input's value the way React listens for it. */
 function type(el: HTMLInputElement | HTMLTextAreaElement, value: string) {
-  const proto = el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
+  const proto =
+    el instanceof HTMLTextAreaElement ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype
   Object.getOwnPropertyDescriptor(proto, 'value')!.set!.call(el, value)
   act(() => {
     el.dispatchEvent(new Event('input', { bubbles: true }))
@@ -36,7 +37,9 @@ function type(el: HTMLInputElement | HTMLTextAreaElement, value: string) {
 
 function key(el: Element, k: string, init: KeyboardEventInit = {}) {
   act(() => {
-    el.dispatchEvent(new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init }))
+    el.dispatchEvent(
+      new KeyboardEvent('keydown', { key: k, bubbles: true, cancelable: true, ...init }),
+    )
   })
 }
 
@@ -118,7 +121,9 @@ describe('LoginForm', () => {
   it('toggles token visibility', () => {
     render(<LoginForm onSubmit={vi.fn()} />)
     const token = container.querySelectorAll('input')[2]
-    act(() => container.querySelector<HTMLButtonElement>('button[aria-label="Показать токен"]')!.click())
+    act(() =>
+      container.querySelector<HTMLButtonElement>('button[aria-label="Показать токен"]')!.click(),
+    )
     expect(token.type).toBe('text')
   })
 })

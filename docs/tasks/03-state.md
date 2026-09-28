@@ -7,6 +7,7 @@
 **Твои файлы:** `src/store/**`, `src/hooks/**`, тесты рядом.
 
 ## Что сделать
+
 1. `useChatStore` в `src/store/chatStore.ts` строго по интерфейсу `ChatState`:
    - `openChat(phone)`: получает chatId через `toChatId(normalizePhone(phone))` из `src/lib/phone.ts`.
      Реализацию пишет API-роль параллельно, в тестах мокай модуль через `vi.mock`. Не дублирует
@@ -37,8 +38,10 @@
    и тестируй её, это предпочтительнее), backoff на fake timers, отмена.
 
 ## Не делать
+
 - Не трогать UI, API, `App.tsx`, `package.json`.
 
 ## Готово, когда
+
 - `npm run build` и `npm test` зелёные.
 - Отчёт: публичные селекторы и хелперы, решения по persist, открытые вопросы.

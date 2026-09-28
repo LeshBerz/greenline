@@ -40,7 +40,11 @@ function errorMessage(status: number): string {
 
 function isAbortError(error: unknown): boolean {
   // Duck-typed: DOMException differs between realms (browser, Node, jsdom).
-  return typeof error === 'object' && error !== null && (error as { name?: unknown }).name === 'AbortError'
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { name?: unknown }).name === 'AbortError'
+  )
 }
 
 export function createGreenApiClient(credentials: Credentials): GreenApiClient {
@@ -101,9 +105,12 @@ export function createGreenApiClient(credentials: Credentials): GreenApiClient {
     },
 
     async receiveNotification(signal) {
-      const data = await request(url('receiveNotification', `?receiveTimeout=${RECEIVE_TIMEOUT_SEC}`), {
-        signal,
-      })
+      const data = await request(
+        url('receiveNotification', `?receiveTimeout=${RECEIVE_TIMEOUT_SEC}`),
+        {
+          signal,
+        },
+      )
       return parseNotification(data)
     },
 

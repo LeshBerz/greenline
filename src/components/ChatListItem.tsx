@@ -37,7 +37,11 @@ export function ChatListItem({ chat, lastMessage, active = false, onSelect }: Ch
           )}
         </span>
         <span className={styles.row}>
-          <span className={[styles.preview, lastMessage?.status === 'failed' && styles.previewFailed].filter(Boolean).join(' ')}>
+          <span
+            className={[styles.preview, lastMessage?.status === 'failed' && styles.previewFailed]
+              .filter(Boolean)
+              .join(' ')}
+          >
             {preview}
           </span>
           {unread && (

@@ -66,7 +66,13 @@ export function MessageInput({
         onChange={(e) => setText(e.target.value)}
         onKeyDown={handleKeyDown}
       />
-      <IconButton type="submit" label="Отправить" variant="accent" disabled={!canSend} className={styles.send}>
+      <IconButton
+        type="submit"
+        label="Отправить"
+        variant="accent"
+        disabled={!canSend}
+        className={styles.send}
+      >
         <SendIcon size={20} />
       </IconButton>
     </form>

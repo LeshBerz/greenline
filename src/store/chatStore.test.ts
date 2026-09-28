@@ -10,13 +10,28 @@ vi.mock('../lib/phone', () => ({
   isValidPhone: () => true,
 }))
 
-const creds: Credentials = { apiUrl: 'https://api.example.test', idInstance: '1101', apiTokenInstance: 'token-a' }
-const otherCreds: Credentials = { apiUrl: 'https://api.example.test', idInstance: '2202', apiTokenInstance: 'token-b' }
+const creds: Credentials = {
+  apiUrl: 'https://api.example.test',
+  idInstance: '1101',
+  apiTokenInstance: 'token-a',
+}
+const otherCreds: Credentials = {
+  apiUrl: 'https://api.example.test',
+  idInstance: '2202',
+  apiTokenInstance: 'token-b',
+}
 
 const CHAT = '79001234567@c.us'
 
 function incoming(overrides: Partial<IncomingTextMessage> = {}): IncomingTextMessage {
-  return { idMessage: 'in-1', chatId: CHAT, senderName: 'Alice', text: 'hi', timestamp: 1_000, ...overrides }
+  return {
+    idMessage: 'in-1',
+    chatId: CHAT,
+    senderName: 'Alice',
+    text: 'hi',
+    timestamp: 1_000,
+    ...overrides,
+  }
 }
 
 const store = () => useChatStore.getState()
@@ -33,7 +48,9 @@ describe('openChat / setActiveChat', () => {
     const chatId = store().openChat('8 (900) 123-45-67')
     expect(chatId).toBe(CHAT)
     expect(store().activeChatId).toBe(CHAT)
-    expect(store().chats).toEqual([{ chatId: CHAT, phone: '79001234567', title: '79001234567', unreadCount: 0 }])
+    expect(store().chats).toEqual([
+      { chatId: CHAT, phone: '79001234567', title: '79001234567', unreadCount: 0 },
+    ])
   })
 
   it('does not duplicate an existing chat and resets its unread counter', () => {
@@ -62,7 +79,12 @@ describe('outgoing messages', () => {
     const tempId = store().addOutgoing(CHAT, 'hello')
     expect(isTempId(tempId)).toBe(true)
     expect(store().messages[CHAT]).toEqual([
-      expect.objectContaining({ id: tempId, text: 'hello', direction: 'outgoing', status: 'pending' }),
+      expect.objectContaining({
+        id: tempId,
+        text: 'hello',
+        direction: 'outgoing',
+        status: 'pending',
+      }),
     ])
   })
 
@@ -75,13 +97,17 @@ describe('outgoing messages', () => {
   it('replaces the temporary id with idMessage on success', () => {
     const tempId = store().addOutgoing(CHAT, 'hello')
     store().resolveOutgoing(tempId, { status: 'sent', idMessage: 'BAE5' })
-    expect(store().messages[CHAT]).toEqual([expect.objectContaining({ id: 'BAE5', status: 'sent' })])
+    expect(store().messages[CHAT]).toEqual([
+      expect.objectContaining({ id: 'BAE5', status: 'sent' }),
+    ])
   })
 
   it('marks the message failed and keeps the temporary id on error', () => {
     const tempId = store().addOutgoing(CHAT, 'hello')
     store().resolveOutgoing(tempId, { status: 'failed' })
-    expect(store().messages[CHAT]).toEqual([expect.objectContaining({ id: tempId, status: 'failed' })])
+    expect(store().messages[CHAT]).toEqual([
+      expect.objectContaining({ id: tempId, status: 'failed' }),
+    ])
   })
 
   it('ignores an unknown temporary id', () => {
@@ -93,16 +119,27 @@ describe('outgoing messages', () => {
 
   it('creates the chat when sending to an unknown chatId', () => {
     store().addOutgoing('555@c.us', 'hello')
-    expect(store().chats).toEqual([{ chatId: '555@c.us', phone: '555', title: '555', unreadCount: 0 }])
+    expect(store().chats).toEqual([
+      { chatId: '555@c.us', phone: '555', title: '555', unreadCount: 0 },
+    ])
   })
 })
 
 describe('receiveIncoming', () => {
   it('creates the chat titled by senderName and counts unread', () => {
     store().receiveIncoming(incoming())
-    expect(store().chats).toEqual([{ chatId: CHAT, phone: '79001234567', title: 'Alice', unreadCount: 1 }])
+    expect(store().chats).toEqual([
+      { chatId: CHAT, phone: '79001234567', title: 'Alice', unreadCount: 1 },
+    ])
     expect(store().messages[CHAT]).toEqual([
-      { id: 'in-1', chatId: CHAT, text: 'hi', direction: 'incoming', status: 'received', timestamp: 1_000 },
+      {
+        id: 'in-1',
+        chatId: CHAT,
+        text: 'hi',
+        direction: 'incoming',
+        status: 'received',
+        timestamp: 1_000,
+      },
     ])
   })
 
@@ -147,7 +184,11 @@ describe('selectors', () => {
     store().receiveIncoming(incoming({ idMessage: '2', chatId: 'new@c.us', timestamp: 5_000 }))
     store().receiveIncoming(incoming({ idMessage: '3', chatId: 'old@c.us', timestamp: 9_000 }))
     store().openChat('111')
-    expect(selectSortedChats(store()).map((c) => c.chatId)).toEqual(['111@c.us', 'old@c.us', 'new@c.us'])
+    expect(selectSortedChats(store()).map((c) => c.chatId)).toEqual([
+      '111@c.us',
+      'old@c.us',
+      'new@c.us',
+    ])
   })
 
   it('selectSortedChats returns a stable reference while inputs are unchanged', () => {
@@ -172,7 +213,12 @@ describe('logout', () => {
     store().openChat('79001234567')
     store().addOutgoing(CHAT, 'hello')
     store().logout()
-    expect(store()).toMatchObject({ credentials: null, chats: [], messages: {}, activeChatId: null })
+    expect(store()).toMatchObject({
+      credentials: null,
+      chats: [],
+      messages: {},
+      activeChatId: null,
+    })
   })
 })
 
@@ -234,7 +280,10 @@ describe('persistence', () => {
   })
 
   it('stays logged out when the session is empty', async () => {
-    localStorage.setItem(historyKey(creds.idInstance), JSON.stringify({ chats: [], messages: {}, activeChatId: null }))
+    localStorage.setItem(
+      historyKey(creds.idInstance),
+      JSON.stringify({ chats: [], messages: {}, activeChatId: null }),
+    )
     await useChatStore.persist.rehydrate()
     expect(store().credentials).toBeNull()
   })

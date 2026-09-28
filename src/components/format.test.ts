@@ -1,6 +1,14 @@
-import { formatDay, formatListTime, formatPhone, formatTime, getInitials, hashIndex } from './format'
+import {
+  formatDay,
+  formatListTime,
+  formatPhone,
+  formatTime,
+  getInitials,
+  hashIndex,
+} from './format'
 
-const at = (y: number, mo: number, d: number, h = 12, mi = 0) => new Date(y, mo - 1, d, h, mi).getTime()
+const at = (y: number, mo: number, d: number, h = 12, mi = 0) =>
+  new Date(y, mo - 1, d, h, mi).getTime()
 
 describe('formatTime', () => {
   it('pads hours and minutes', () => {
@@ -10,9 +18,11 @@ describe('formatTime', () => {
 
 describe('formatListTime', () => {
   const now = at(2026, 9, 24, 18)
-  it('shows time for today', () => expect(formatListTime(at(2026, 9, 24, 9, 30), now)).toBe('09:30'))
+  it('shows time for today', () =>
+    expect(formatListTime(at(2026, 9, 24, 9, 30), now)).toBe('09:30'))
   it('shows date for this year', () => expect(formatListTime(at(2026, 3, 2), now)).toBe('02.03'))
-  it('shows full date for older', () => expect(formatListTime(at(2025, 12, 31), now)).toBe('31.12.25'))
+  it('shows full date for older', () =>
+    expect(formatListTime(at(2025, 12, 31), now)).toBe('31.12.25'))
 })
 
 describe('formatDay', () => {
@@ -36,7 +46,8 @@ describe('getInitials', () => {
 
 describe('formatPhone', () => {
   it('formats 11-digit numbers', () => expect(formatPhone('79001234567')).toBe('+7 900 123-45-67'))
-  it('prefixes other lengths with +', () => expect(formatPhone('4915112345678')).toBe('+4915112345678'))
+  it('prefixes other lengths with +', () =>
+    expect(formatPhone('4915112345678')).toBe('+4915112345678'))
 })
 
 describe('hashIndex', () => {

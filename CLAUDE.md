@@ -8,15 +8,18 @@ Telegram (ТЗ разрешает Telegram/WhatsApp вместо MAX); API у GR
 План и роли: [ROADMAP.md](ROADMAP.md). Задача каждой роли: `docs/tasks/*.md`.
 
 ## Стек
+
 Vite + React 19 + TypeScript (strict) + zustand + Vitest. Без UI-библиотек, стили на CSS Modules.
 Бэкенда нет: браузер ходит в GREEN-API напрямую.
 
 ## Команды
+
 - `npm run dev`: dev-сервер
 - `npm run build`: typecheck + сборка
 - `npm test`: юнит-тесты (Vitest, jsdom)
 
 ## Правила для всех ролей
+
 - Редактируй только файлы своей роли (таблица владения в ROADMAP.md). Нужна правка чужого
   файла или `src/types.ts`: остановись и опиши нужное изменение в отчёте, не правь сам.
 - Сигнатуры из контрактов (`src/types.ts`, `GreenApiClient`, `ChatState`,

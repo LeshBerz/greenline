@@ -60,7 +60,10 @@ describe('createGreenApiClient', () => {
       expect(url).toBe(`${BASE}/sendMessage/test-token`)
       expect(init?.method).toBe('POST')
       expect(init?.headers).toEqual({ 'Content-Type': 'application/json' })
-      expect(JSON.parse(init?.body as string)).toEqual({ chatId: '79001234567@c.us', message: 'Hello' })
+      expect(JSON.parse(init?.body as string)).toEqual({
+        chatId: '79001234567@c.us',
+        message: 'Hello',
+      })
     })
 
     it('throws when idMessage is missing', async () => {
@@ -78,7 +81,9 @@ describe('createGreenApiClient', () => {
       const client = createGreenApiClient(credentials)
       await expect(client.receiveNotification(controller.signal)).resolves.toBeNull()
       const [url, init] = fetchMock.mock.calls[0]
-      expect(url).toBe(`${BASE}/receiveNotification/test-token?receiveTimeout=${RECEIVE_TIMEOUT_SEC}`)
+      expect(url).toBe(
+        `${BASE}/receiveNotification/test-token?receiveTimeout=${RECEIVE_TIMEOUT_SEC}`,
+      )
       expect(init?.signal).toBe(controller.signal)
     })
 
@@ -120,7 +125,9 @@ describe('createGreenApiClient', () => {
   describe('deleteNotification', () => {
     it('sends DELETE with receiptId in the path', async () => {
       respond({ result: true })
-      await expect(createGreenApiClient(credentials).deleteNotification(42)).resolves.toBeUndefined()
+      await expect(
+        createGreenApiClient(credentials).deleteNotification(42),
+      ).resolves.toBeUndefined()
       const [url, init] = fetchMock.mock.calls[0]
       expect(url).toBe(`${BASE}/deleteNotification/test-token/42`)
       expect(init?.method).toBe('DELETE')
@@ -139,7 +146,9 @@ describe('createGreenApiClient', () => {
 
     it('reports rate limiting on 429', async () => {
       respond('Too Many Requests', 429)
-      await expect(createGreenApiClient(credentials).sendMessage('1@c.us', 'x')).rejects.toMatchObject({
+      await expect(
+        createGreenApiClient(credentials).sendMessage('1@c.us', 'x'),
+      ).rejects.toMatchObject({
         name: 'GreenApiError',
         status: 429,
         message: expect.stringContaining('Слишком много запросов'),
@@ -160,7 +169,10 @@ describe('createGreenApiClient', () => {
         .receiveNotification()
         .catch((e: unknown) => e)
       expect(error).toBeInstanceOf(GreenApiError)
-      expect(error).toMatchObject({ status: undefined, message: expect.stringContaining('Нет связи') })
+      expect(error).toMatchObject({
+        status: undefined,
+        message: expect.stringContaining('Нет связи'),
+      })
     })
 
     it('rejects invalid JSON', async () => {

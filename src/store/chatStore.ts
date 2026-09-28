@@ -52,7 +52,9 @@ function newChat(chatId: string, phone: string, title = phone): Chat {
 }
 
 function resetUnread(chats: Chat[], chatId: string | null): Chat[] {
-  return chats.map((c) => (c.chatId === chatId && c.unreadCount !== 0 ? { ...c, unreadCount: 0 } : c))
+  return chats.map((c) =>
+    c.chatId === chatId && c.unreadCount !== 0 ? { ...c, unreadCount: 0 } : c,
+  )
 }
 
 /** Appends a message keeping the list ordered by timestamp (stable for equal timestamps). */
@@ -88,7 +90,9 @@ export const useChatStore = create<ChatState>()(
         const chatId = toChatId(normalized)
         set((state) => {
           const exists = state.chats.some((c) => c.chatId === chatId)
-          const chats = exists ? resetUnread(state.chats, chatId) : [newChat(chatId, normalized), ...state.chats]
+          const chats = exists
+            ? resetUnread(state.chats, chatId)
+            : [newChat(chatId, normalized), ...state.chats]
           return { chats, activeChatId: chatId }
         })
         return chatId
@@ -147,12 +151,19 @@ export const useChatStore = create<ChatState>()(
           let chats: Chat[]
           if (!existing) {
             const phone = phoneFromChatId(chatId)
-            chats = [{ ...newChat(chatId, phone, incoming.senderName || phone), unreadCount: isActive ? 0 : 1 }, ...state.chats]
+            chats = [
+              {
+                ...newChat(chatId, phone, incoming.senderName || phone),
+                unreadCount: isActive ? 0 : 1,
+              },
+              ...state.chats,
+            ]
           } else {
             chats = state.chats.map((c) => {
               if (c.chatId !== chatId) return c
               // A chat opened by phone gets a real name once the contact writes back.
-              const title = c.title === c.phone && incoming.senderName ? incoming.senderName : c.title
+              const title =
+                c.title === c.phone && incoming.senderName ? incoming.senderName : c.title
               return { ...c, title, unreadCount: isActive ? 0 : c.unreadCount + 1 }
             })
           }

@@ -76,7 +76,9 @@ describe('parseNotification', () => {
   })
 
   it('returns message null for status webhooks and malformed bodies', () => {
-    expect(parseNotification({ receiptId: 1, body: { typeWebhook: 'stateInstanceChanged' } })).toEqual({
+    expect(
+      parseNotification({ receiptId: 1, body: { typeWebhook: 'stateInstanceChanged' } }),
+    ).toEqual({
       receiptId: 1,
       message: null,
     })

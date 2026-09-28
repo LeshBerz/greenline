@@ -50,7 +50,9 @@ function NewChatForm({ onSubmit, onClose, error }: Omit<NewChatDialogProps, 'ope
     }
     if (e.key !== 'Tab' || !dialogRef.current) return
     // Keep focus inside the dialog.
-    const focusable = dialogRef.current.querySelectorAll<HTMLElement>('input, button:not(:disabled)')
+    const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+      'input, button:not(:disabled)',
+    )
     const first = focusable[0]
     const last = focusable[focusable.length - 1]
     if (e.shiftKey && document.activeElement === first) {

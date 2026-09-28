@@ -46,9 +46,17 @@ export function createScriptedClient(steps: Step[]) {
   return { client, stats }
 }
 
-export function textNotification(receiptId: number, idMessage = `m${receiptId}`): QueueNotification {
+export function textNotification(
+  receiptId: number,
+  idMessage = `m${receiptId}`,
+): QueueNotification {
   return {
     receiptId,
-    message: { idMessage, chatId: '79001234567@c.us', text: `text ${receiptId}`, timestamp: receiptId },
+    message: {
+      idMessage,
+      chatId: '79001234567@c.us',
+      text: `text ${receiptId}`,
+      timestamp: receiptId,
+    },
   }
 }

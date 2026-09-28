@@ -7,6 +7,7 @@
 `docs/deploy.md`, `package.json` (только `scripts` и `devDependencies`), `package-lock.json`.
 
 ## Что сделать
+
 1. ESLint (flat config): `typescript-eslint`, `eslint-plugin-react-hooks`, `eslint-plugin-react-refresh`.
    Prettier: без точек с запятой, одинарные кавычки, trailing commas, ширина 100 (как в текущем коде).
    Скрипты `lint`, `format`, `format:check`. Прогони форматирование только по своим файлам.
@@ -26,10 +27,12 @@
 5. `.vscode/extensions.json` с рекомендациями ESLint и Prettier (опционально).
 
 ## Не делать
+
 - Не трогать `src/**` (кроме случая, когда lint падает на чужом файле: тогда не чини, а опиши в отчёте
   или ослабь правило).
 - Не добавлять runtime-зависимости.
 
 ## Готово, когда
+
 - `npm run lint`, `npm test`, `npm run build` проходят локально на текущем `main`.
 - Отчёт: какие файлы добавлены и что тимлиду нужно сделать руками на GitHub.

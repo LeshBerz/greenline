@@ -11,12 +11,7 @@ export interface Credentials {
 
 /** Subset of GREEN-API getStateInstance values the app cares about. */
 export type InstanceState =
-  | 'authorized'
-  | 'notAuthorized'
-  | 'blocked'
-  | 'starting'
-  | 'yellowCard'
-  | 'unknown'
+  'authorized' | 'notAuthorized' | 'blocked' | 'starting' | 'yellowCard' | 'unknown'
 
 export type MessageDirection = 'incoming' | 'outgoing'
 
