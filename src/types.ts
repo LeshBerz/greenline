@@ -15,7 +15,15 @@ export type InstanceState =
 
 export type MessageDirection = 'incoming' | 'outgoing'
 
-export type MessageStatus = 'pending' | 'sent' | 'failed' | 'received'
+/** Outgoing: pending -> sent -> delivered -> read (or failed). Incoming: received. */
+export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'read' | 'failed' | 'received'
+
+/** Status of a sent message from an outgoingMessageStatus webhook. */
+export interface OutgoingStatusUpdate {
+  idMessage: string
+  chatId: string
+  status: 'sent' | 'delivered' | 'read' | 'failed'
+}
 
 export interface Message {
   /** idMessage from GREEN-API, or a temporary local id while status is "pending". */
@@ -53,4 +61,6 @@ export interface QueueNotification {
   receiptId: number
   /** Parsed text message, or null for any other webhook type (to be deleted and skipped). */
   message: IncomingTextMessage | null
+  /** Parsed outgoingMessageStatus webhook, if this notification is one. */
+  status?: OutgoingStatusUpdate | null
 }

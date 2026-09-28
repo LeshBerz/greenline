@@ -96,6 +96,34 @@ describe('parseNotification', () => {
     expect(parseNotification(noText)?.message).toBeNull()
   })
 
+  it('parses an outgoingMessageStatus webhook', () => {
+    const body = {
+      typeWebhook: 'outgoingMessageStatus',
+      chatId: '10000000',
+      instanceData: { idInstance: 1100000001, wid: '79001234567@c.us', typeInstance: 'telegram' },
+      timestamp: 1755591519,
+      idMessage: '115054445839974415',
+      status: 'read',
+    }
+    expect(parseNotification({ receiptId: 3, body })).toEqual({
+      receiptId: 3,
+      message: null,
+      status: { idMessage: '115054445839974415', chatId: '10000000', status: 'read' },
+    })
+  })
+
+  it('skips statuses that cannot be matched to a message', () => {
+    const noAccount = {
+      typeWebhook: 'outgoingMessageStatus',
+      chatId: '1@c.us',
+      status: 'noAccount',
+    }
+    expect(parseNotification({ receiptId: 4, body: noAccount })).toEqual({
+      receiptId: 4,
+      message: null,
+    })
+  })
+
   it('throws GreenApiError when receiptId is missing', () => {
     expect(() => parseNotification({ body: {} })).toThrow(GreenApiError)
     expect(() => parseNotification('oops')).toThrow(GreenApiError)
