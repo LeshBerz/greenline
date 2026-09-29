@@ -3,7 +3,7 @@
 // localStorage key, so a tab with an older copy would erase what another tab added. Instead,
 // a tab merges the other tab's history into its own when localStorage changes.
 import type { Chat, Message, MessageStatus } from '../types'
-import type { ChatHistory } from './storage'
+import { isOpenedByPhone, type ChatHistory } from './storage'
 
 const RANK: Partial<Record<MessageStatus, number>> = { sent: 1, delivered: 2, read: 3 }
 
@@ -24,11 +24,12 @@ export function mergeHistory(
   isTempId: (id: string) => boolean,
 ): ChatHistory {
   const knownChats = new Set(local.chats.map((c) => c.chatId))
-  const chats: Chat[] = [...local.chats, ...remote.chats.filter((c) => !knownChats.has(c.chatId))]
+  // Like loadHistory: a tab with an older copy may still hold chats that were not opened by phone.
+  const added = remote.chats.filter((c) => !knownChats.has(c.chatId) && isOpenedByPhone(c))
+  const chats: Chat[] = [...local.chats, ...added]
 
   const messages: Record<string, Message[]> = {}
-  const chatIds = new Set([...Object.keys(local.messages), ...Object.keys(remote.messages)])
-  for (const chatId of chatIds) {
+  for (const { chatId } of chats) {
     const remoteList = remote.messages[chatId] ?? []
     const remoteIds = new Set(remoteList.map((m) => m.id))
     const byId = new Map<string, Message>()

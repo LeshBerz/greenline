@@ -56,4 +56,16 @@ describe('mergeHistory', () => {
     expect(merged.chats).toEqual([{ ...chat, unreadCount: 1 }, other])
     expect(merged.activeChatId).toBe(CHAT)
   })
+
+  it('does not bring back chats that were not opened by phone', () => {
+    const stray = { chatId: '30000000', phone: '30000000', title: 'Group', unreadCount: 1 }
+    const merged = mergeHistory(
+      history([]),
+      { chats: [chat, stray], messages: { '30000000': [msg('s', 1)] }, activeChatId: null },
+      () => false,
+      isTemp,
+    )
+    expect(merged.chats).toEqual([chat])
+    expect(merged.messages).toEqual({ [CHAT]: [] })
+  })
 })
