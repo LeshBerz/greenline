@@ -373,6 +373,20 @@ describe('persistence', () => {
     expect(store().messages[CHAT]).toHaveLength(1)
   })
 
+  it('drops saved chats that were not opened by phone', () => {
+    store().login(creds)
+    store().openChat('79001234567', '10000000')
+    store().receiveIncoming(incoming({ chatId: '10000000' }))
+    store().receiveIncoming(incoming({ idMessage: 'in-2', chatId: '20000000' }))
+    store().setActiveChat('20000000')
+    store().logout()
+
+    store().login(creds)
+    expect(store().chats.map((c) => c.chatId)).toEqual(['10000000'])
+    expect(Object.keys(store().messages)).toEqual(['10000000'])
+    expect(store().activeChatId).toBeNull()
+  })
+
   it('does not mix histories of different instances', () => {
     store().login(creds)
     store().receiveIncoming(incoming())

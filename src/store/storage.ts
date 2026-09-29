@@ -69,17 +69,31 @@ export function loadCredentials(): Credentials | null {
 }
 
 /**
+ * True for a chat opened by phone. A chat created by an incoming message has no known number:
+ * its phone is just the raw chat id (e.g. a Telegram numeric id).
+ */
+export function isOpenedByPhone(chat: Chat): boolean {
+  return chat.phone !== chat.chatId
+}
+
+/**
  * Reads the saved history of an instance. Messages that were still "pending" when the page was
- * closed never got a result, so they come back as "failed".
+ * closed never got a result, so they come back as "failed". Chats that were created by incoming
+ * messages (saved by older versions) are dropped: the app shows only chats opened by phone.
  */
 export function loadHistory(idInstance: string): ChatHistory {
   const history = toHistory(readJson(localStorage, historyKey(idInstance)))
   if (!history) return EMPTY_HISTORY
+  const chats = history.chats.filter(isOpenedByPhone)
   const messages: Record<string, Message[]> = {}
-  for (const [chatId, list] of Object.entries(history.messages)) {
+  for (const { chatId } of chats) {
+    const list = history.messages[chatId] ?? []
     messages[chatId] = list.map((m) => (m.status === 'pending' ? { ...m, status: 'failed' } : m))
   }
-  return { ...history, messages }
+  const activeChatId = chats.some((c) => c.chatId === history.activeChatId)
+    ? history.activeChatId
+    : null
+  return { chats, messages, activeChatId }
 }
 
 /** Parses history JSON written by another tab, as is (pending messages stay pending there). */
