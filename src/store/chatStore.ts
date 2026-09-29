@@ -3,7 +3,15 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { normalizePhone, toChatId } from '../lib/phone'
 import type { Chat, Credentials, IncomingTextMessage, Message, MessageStatus } from '../types'
-import { chatPersistStorage, EMPTY_HISTORY, loadHistory, type PersistedChatState } from './storage'
+import { mergeHistory } from './mergeHistory'
+import {
+  chatPersistStorage,
+  EMPTY_HISTORY,
+  historyKey,
+  loadHistory,
+  parseHistory,
+  type PersistedChatState,
+} from './storage'
 
 export interface ChatState {
   credentials: Credentials | null
@@ -46,10 +54,14 @@ export interface ChatState {
 export const TEMP_ID_PREFIX = 'local:'
 
 let tempCounter = 0
+/** Temporary ids created by this tab (see mergeHistory). */
+const ownTempIds = new Set<string>()
 
 function createTempId(): string {
   tempCounter += 1
-  return `${TEMP_ID_PREFIX}${Date.now().toString(36)}-${tempCounter}`
+  const id = `${TEMP_ID_PREFIX}${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}-${tempCounter}`
+  ownTempIds.add(id)
+  return id
 }
 
 /** True for ids created by addOutgoing that were not replaced by an idMessage yet. */
@@ -242,6 +254,34 @@ export const useChatStore = create<ChatState>()(
     },
   ),
 )
+
+/**
+ * Merges history that another tab of the same instance wrote to localStorage. Without it the
+ * tab with an older copy would erase the other tab's messages on its next write. The state is
+ * set only if the merge adds something, so two tabs do not keep re-writing each other.
+ */
+export function syncFromOtherTab(event: StorageEvent): void {
+  const { credentials, chats, messages, activeChatId } = useChatStore.getState()
+  if (!credentials || event.newValue === null) return
+  if (event.key !== historyKey(credentials.idInstance)) return
+  const remote = parseHistory(event.newValue)
+  if (!remote) return
+  const merged = mergeHistory(
+    { chats, messages, activeChatId },
+    remote,
+    (id) => ownTempIds.has(id),
+    isTempId,
+  )
+  if (
+    merged.chats.length === chats.length &&
+    JSON.stringify(merged.messages) === JSON.stringify(messages)
+  ) {
+    return
+  }
+  useChatStore.setState({ chats: merged.chats, messages: merged.messages })
+}
+
+if (typeof window !== 'undefined') window.addEventListener('storage', syncFromOtherTab)
 
 export {
   selectActiveChat,

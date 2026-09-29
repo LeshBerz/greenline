@@ -255,6 +255,51 @@ describe('read receipts', () => {
   })
 })
 
+describe('sync between tabs', () => {
+  function otherTabWrites(messages: Record<string, unknown[]>) {
+    const newValue = JSON.stringify({ chats: store().chats, messages, activeChatId: null })
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: historyKey(creds.idInstance), newValue }),
+    )
+  }
+
+  it('does not lose a message sent here when another tab writes an older copy', () => {
+    store().login(creds)
+    store().openChat('79001234567')
+    const tempId = store().addOutgoing(CHAT, 'mine')
+    store().resolveOutgoing(tempId, { status: 'sent', idMessage: 'out-1' })
+    otherTabWrites({
+      [CHAT]: [
+        {
+          ...incoming(),
+          id: 'in-1',
+          direction: 'incoming',
+          status: 'received',
+          idMessage: undefined,
+        },
+      ],
+    })
+    expect(store().messages[CHAT].map((m) => m.id)).toEqual(['in-1', 'out-1'])
+    const saved = JSON.parse(localStorage.getItem(historyKey(creds.idInstance))!)
+    expect(saved.messages[CHAT]).toHaveLength(2)
+  })
+
+  it('ignores other instances and changes that add nothing', () => {
+    store().login(creds)
+    store().openChat('79001234567')
+    const before = store().messages
+    otherTabWrites({})
+    expect(store().messages).toBe(before)
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: historyKey('other'),
+        newValue: '{"chats":[],"messages":{}}',
+      }),
+    )
+    expect(store().messages).toBe(before)
+  })
+})
+
 describe('selectors', () => {
   it('sorts chats by last message, newest first; empty chats stay on top', () => {
     store().receiveIncoming(incoming({ idMessage: '1', chatId: 'old@c.us', timestamp: 1_000 }))
