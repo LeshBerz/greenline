@@ -36,6 +36,7 @@ export function createScriptedClient(steps: Step[]) {
 
   const client = {
     getStateInstance: vi.fn(async () => 'authorized' as const),
+    checkAccount: vi.fn(async (phone: string): Promise<string | null> => `${phone}@c.us`),
     sendMessage: vi.fn(async () => ({ idMessage: 'x' })),
     receiveNotification,
     deleteNotification: vi.fn(async (receiptId: number) => {

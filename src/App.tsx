@@ -1,4 +1,9 @@
-// Owner: Integration role (phase 2). Placeholder until then.
+// Owner: Integrator.
+import { ChatPage } from './features/chat/ChatPage'
+import { LoginPage } from './features/login/LoginPage'
+import { useChatStore } from './store/chatStore'
+
 export function App() {
-  return <div>Greenline</div>
+  const credentials = useChatStore((s) => s.credentials)
+  return credentials ? <ChatPage credentials={credentials} /> : <LoginPage />
 }

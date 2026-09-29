@@ -3,7 +3,15 @@ import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { normalizePhone, toChatId } from '../lib/phone'
 import type { Chat, Credentials, IncomingTextMessage, Message, MessageStatus } from '../types'
-import { chatPersistStorage, EMPTY_HISTORY, loadHistory, type PersistedChatState } from './storage'
+import { mergeHistory } from './mergeHistory'
+import {
+  chatPersistStorage,
+  EMPTY_HISTORY,
+  historyKey,
+  loadHistory,
+  parseHistory,
+  type PersistedChatState,
+} from './storage'
 
 export interface ChatState {
   credentials: Credentials | null
@@ -15,8 +23,13 @@ export interface ChatState {
   login(credentials: Credentials): void
   logout(): void
 
-  /** Creates the chat if it does not exist and makes it active. Returns its chatId. */
-  openChat(phone: string): string
+  /**
+   * Creates the chat if it does not exist and makes it active. Returns its chatId.
+   * `chatId` is the id resolved by the messenger (Telegram: checkAccount); defaults to
+   * toChatId(phone). If a chat with that id already exists (e.g. created by an incoming
+   * message), it gets the phone number.
+   */
+  openChat(phone: string, chatId?: string): string
   setActiveChat(chatId: string | null): void
 
   /** Adds an outgoing message with status "pending". Returns the temporary id. */
@@ -24,17 +37,31 @@ export interface ChatState {
   /** Updates a pending message after the send result is known (id may be replaced by idMessage). */
   resolveOutgoing(tempId: string, result: { status: MessageStatus; idMessage?: string }): void
 
-  /** Adds an incoming message; creates the chat if needed; dedupes by idMessage; bumps unread if chat is not active. */
+  /**
+   * Applies a status webhook to a sent message found by idMessage. Statuses only move forward
+   * (sent -> delivered -> read), so a late "delivered" never overrides "read".
+   */
+  updateOutgoingStatus(idMessage: string, status: MessageStatus): void
+
+  /**
+   * Adds an incoming message; creates the chat if needed; dedupes by idMessage; bumps unread if
+   * chat is not active. A reply means the contact has seen the chat, so earlier sent messages
+   * of this chat become "read" (works even without status webhooks).
+   */
   receiveIncoming(message: IncomingTextMessage): void
 }
 
 export const TEMP_ID_PREFIX = 'local:'
 
 let tempCounter = 0
+/** Temporary ids created by this tab (see mergeHistory). */
+const ownTempIds = new Set<string>()
 
 function createTempId(): string {
   tempCounter += 1
-  return `${TEMP_ID_PREFIX}${Date.now().toString(36)}-${tempCounter}`
+  const id = `${TEMP_ID_PREFIX}${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}-${tempCounter}`
+  ownTempIds.add(id)
+  return id
 }
 
 /** True for ids created by addOutgoing that were not replaced by an idMessage yet. */
@@ -55,6 +82,16 @@ function resetUnread(chats: Chat[], chatId: string | null): Chat[] {
   return chats.map((c) =>
     c.chatId === chatId && c.unreadCount !== 0 ? { ...c, unreadCount: 0 } : c,
   )
+}
+
+const DELIVERY_RANK: Partial<Record<MessageStatus, number>> = { sent: 1, delivered: 2, read: 3 }
+
+/** True if an outgoing message may move from `current` to `next`. */
+function canAdvance(current: MessageStatus, next: MessageStatus): boolean {
+  if (next === 'failed') return current === 'pending' || current === 'sent'
+  const from = DELIVERY_RANK[current] ?? (current === 'failed' ? 0 : undefined)
+  const to = DELIVERY_RANK[next]
+  return from !== undefined && to !== undefined && to > from
 }
 
 /** Appends a message keeping the list ordered by timestamp (stable for equal timestamps). */
@@ -85,13 +122,17 @@ export const useChatStore = create<ChatState>()(
         set({ ...emptyState })
       },
 
-      openChat(phone) {
+      openChat(phone, resolvedChatId) {
         const normalized = normalizePhone(phone)
-        const chatId = toChatId(normalized)
+        const chatId = resolvedChatId ?? toChatId(normalized)
         set((state) => {
           const exists = state.chats.some((c) => c.chatId === chatId)
           const chats = exists
-            ? resetUnread(state.chats, chatId)
+            ? resetUnread(state.chats, chatId).map((c) =>
+                c.chatId === chatId && c.phone !== normalized
+                  ? { ...c, phone: normalized, title: c.title === c.phone ? normalized : c.title }
+                  : c,
+              )
             : [newChat(chatId, normalized), ...state.chats]
           return { chats, activeChatId: chatId }
         })
@@ -140,11 +181,32 @@ export const useChatStore = create<ChatState>()(
         }
       },
 
+      updateOutgoingStatus(idMessage, status) {
+        set((state) => {
+          for (const [chatId, list] of Object.entries(state.messages)) {
+            const index = list.findIndex((m) => m.id === idMessage && m.direction === 'outgoing')
+            if (index === -1) continue
+            if (!canAdvance(list[index].status, status)) return state
+            const next = list.map((m, i) => (i === index ? { ...m, status } : m))
+            return { messages: { ...state.messages, [chatId]: next } }
+          }
+          return state
+        })
+      },
+
       receiveIncoming(incoming) {
         set((state) => {
           const { chatId } = incoming
-          const list = state.messages[chatId] ?? []
-          if (list.some((m) => m.id === incoming.idMessage)) return state
+          const known = state.messages[chatId] ?? []
+          if (known.some((m) => m.id === incoming.idMessage)) return state
+          const list = known.map((m) =>
+            m.direction === 'outgoing' &&
+            m.timestamp <= incoming.timestamp &&
+            canAdvance(m.status, 'read') &&
+            m.status !== 'failed'
+              ? { ...m, status: 'read' as const }
+              : m,
+          )
 
           const isActive = state.activeChatId === chatId
           const existing = state.chats.find((c) => c.chatId === chatId)
@@ -192,6 +254,34 @@ export const useChatStore = create<ChatState>()(
     },
   ),
 )
+
+/**
+ * Merges history that another tab of the same instance wrote to localStorage. Without it the
+ * tab with an older copy would erase the other tab's messages on its next write. The state is
+ * set only if the merge adds something, so two tabs do not keep re-writing each other.
+ */
+export function syncFromOtherTab(event: StorageEvent): void {
+  const { credentials, chats, messages, activeChatId } = useChatStore.getState()
+  if (!credentials || event.newValue === null) return
+  if (event.key !== historyKey(credentials.idInstance)) return
+  const remote = parseHistory(event.newValue)
+  if (!remote) return
+  const merged = mergeHistory(
+    { chats, messages, activeChatId },
+    remote,
+    (id) => ownTempIds.has(id),
+    isTempId,
+  )
+  if (
+    merged.chats.length === chats.length &&
+    JSON.stringify(merged.messages) === JSON.stringify(messages)
+  ) {
+    return
+  }
+  useChatStore.setState({ chats: merged.chats, messages: merged.messages })
+}
+
+if (typeof window !== 'undefined') window.addEventListener('storage', syncFromOtherTab)
 
 export {
   selectActiveChat,

@@ -1,5 +1,5 @@
 // Owner: API role. Pure parsing of receiveNotification responses.
-import type { IncomingTextMessage, QueueNotification } from '../types'
+import type { IncomingTextMessage, OutgoingStatusUpdate, QueueNotification } from '../types'
 import { GreenApiError } from './errors'
 
 type Json = Record<string, unknown>
@@ -19,7 +19,9 @@ function extractText(messageData: Json): string | undefined {
       const data = messageData.textMessageData
       return isObject(data) ? str(data.textMessage) : undefined
     }
-    case 'extendedTextMessage': {
+    // A reply to a message ("quotedMessage") carries its text the same way as extendedTextMessage.
+    case 'extendedTextMessage':
+    case 'quotedMessage': {
       const data = messageData.extendedTextMessageData
       return isObject(data) ? str(data.text) : undefined
     }
@@ -44,9 +46,28 @@ function parseBody(body: unknown): IncomingTextMessage | null {
   return { idMessage, chatId, senderName, text, timestamp }
 }
 
+const OUTGOING_STATUSES: readonly OutgoingStatusUpdate['status'][] = [
+  'sent',
+  'delivered',
+  'read',
+  'failed',
+]
+
+/** Turns an outgoingMessageStatus webhook body into a status update, or null if it is not one. */
+function parseStatus(body: unknown): OutgoingStatusUpdate | null {
+  if (!isObject(body) || body.typeWebhook !== 'outgoingMessageStatus') return null
+  const idMessage = str(body.idMessage)
+  const chatId = str(body.chatId)
+  const status = OUTGOING_STATUSES.find((known) => known === body.status)
+  // "noAccount" and other statuses without idMessage cannot be matched to a message.
+  if (!idMessage || !chatId || !status) return null
+  return { idMessage, chatId, status }
+}
+
 /**
  * Parses a raw receiveNotification response.
- * Returns null for an empty queue; `message` is null for any non-text webhook.
+ * Returns null for an empty queue; `message` is null for any non-text webhook,
+ * `status` is null for anything but a known outgoingMessageStatus.
  * Throws GreenApiError if the response has no numeric receiptId (it could not be deleted).
  */
 export function parseNotification(raw: unknown): QueueNotification | null {
@@ -54,5 +75,6 @@ export function parseNotification(raw: unknown): QueueNotification | null {
   if (!isObject(raw) || typeof raw.receiptId !== 'number') {
     throw new GreenApiError('Неожиданный формат уведомления от GREEN-API')
   }
-  return { receiptId: raw.receiptId, message: parseBody(raw.body) }
+  const status = parseStatus(raw.body)
+  return { receiptId: raw.receiptId, message: parseBody(raw.body), ...(status && { status }) }
 }

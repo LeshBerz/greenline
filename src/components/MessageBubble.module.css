@@ -50,7 +50,7 @@
 }
 
 .spacerOut {
-  width: 62px;
+  width: 64px;
 }
 
 .meta {
@@ -78,13 +78,35 @@
   color: var(--color-text-tertiary);
 }
 
-.sent {
+.sent,
+.delivered,
+.read {
   color: var(--color-accent);
 }
 
 .failed {
   color: var(--color-danger);
   cursor: help;
+}
+
+.outgoing:has(.retry) {
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.retry {
+  margin-top: 2px;
+  padding: 2px 4px;
+  border: none;
+  background: none;
+  color: var(--color-danger);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.retry:hover,
+.retry:focus-visible {
+  text-decoration: underline;
 }
 
 @media (max-width: 767px) {

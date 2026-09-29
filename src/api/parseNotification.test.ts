@@ -49,6 +49,15 @@ describe('parseNotification', () => {
     expect(parseNotification(raw)?.message?.text).toBe('See https://example.com')
   })
 
+  it('parses a reply (quotedMessage) as text', () => {
+    const raw = incoming({
+      typeMessage: 'quotedMessage',
+      extendedTextMessageData: { text: 'Reply', stanzaId: 'MSG-0', participant: '10000000' },
+      quotedMessage: { stanzaId: 'MSG-0', typeMessage: 'textMessage', textMessage: 'Hello' },
+    })
+    expect(parseNotification(raw)?.message?.text).toBe('Reply')
+  })
+
   it('keeps a numeric Telegram chatId as is and falls back to chatName', () => {
     const raw = incoming(
       { typeMessage: 'textMessage', textMessageData: { textMessage: 'Hi' } },
@@ -85,6 +94,34 @@ describe('parseNotification', () => {
     expect(parseNotification({ receiptId: 2, body: null })).toEqual({ receiptId: 2, message: null })
     const noText = incoming({ typeMessage: 'textMessage', textMessageData: {} })
     expect(parseNotification(noText)?.message).toBeNull()
+  })
+
+  it('parses an outgoingMessageStatus webhook', () => {
+    const body = {
+      typeWebhook: 'outgoingMessageStatus',
+      chatId: '10000000',
+      instanceData: { idInstance: 1100000001, wid: '79001234567@c.us', typeInstance: 'telegram' },
+      timestamp: 1755591519,
+      idMessage: '115054445839974415',
+      status: 'read',
+    }
+    expect(parseNotification({ receiptId: 3, body })).toEqual({
+      receiptId: 3,
+      message: null,
+      status: { idMessage: '115054445839974415', chatId: '10000000', status: 'read' },
+    })
+  })
+
+  it('skips statuses that cannot be matched to a message', () => {
+    const noAccount = {
+      typeWebhook: 'outgoingMessageStatus',
+      chatId: '1@c.us',
+      status: 'noAccount',
+    }
+    expect(parseNotification({ receiptId: 4, body: noAccount })).toEqual({
+      receiptId: 4,
+      message: null,
+    })
   })
 
   it('throws GreenApiError when receiptId is missing', () => {

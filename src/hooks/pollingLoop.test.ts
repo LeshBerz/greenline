@@ -43,6 +43,20 @@ describe('runPollingLoop', () => {
     await expect(loop).resolves.toBeUndefined()
   })
 
+  it('passes status notifications to onStatus and deletes them', async () => {
+    const status = { idMessage: 'out-1', chatId: '10000000', status: 'read' as const }
+    const { client } = createScriptedClient([{ receiptId: 1, message: null, status }])
+    const onMessage = vi.fn()
+    const onStatus = vi.fn()
+    const controller = new AbortController()
+    void runPollingLoop(client, onMessage, controller.signal, { onStatus })
+    await flush()
+    expect(onStatus).toHaveBeenCalledWith(status)
+    expect(onMessage).not.toHaveBeenCalled()
+    expect(client.deleteNotification).toHaveBeenCalledWith(1)
+    controller.abort()
+  })
+
   it('deletes the notification after onMessage, not before', async () => {
     const { client } = createScriptedClient([textNotification(1)])
     const order: string[] = []

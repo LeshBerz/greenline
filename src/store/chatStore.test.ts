@@ -62,6 +62,34 @@ describe('openChat / setActiveChat', () => {
     expect(store().activeChatId).toBe(CHAT)
   })
 
+  it('uses a resolved chatId (Telegram) instead of phone@c.us', () => {
+    const chatId = store().openChat('+7 900 123 45 67', '10000000')
+    expect(chatId).toBe('10000000')
+    expect(store().activeChatId).toBe('10000000')
+    expect(store().chats).toEqual([
+      { chatId: '10000000', phone: '79001234567', title: '79001234567', unreadCount: 0 },
+    ])
+  })
+
+  it('a reply to a resolved chatId lands in the same chat', () => {
+    store().openChat('79001234567', '10000000')
+    store().setActiveChat(null)
+    store().receiveIncoming(incoming({ chatId: '10000000' }))
+    expect(store().chats).toHaveLength(1)
+    expect(store().chats[0]).toEqual(
+      expect.objectContaining({ chatId: '10000000', title: 'Alice', unreadCount: 1 }),
+    )
+  })
+
+  it('attaches the phone to a chat that was created by an incoming message', () => {
+    store().receiveIncoming(incoming({ chatId: '10000000', senderName: undefined }))
+    expect(store().chats[0].title).toBe('10000000')
+    store().openChat('79001234567', '10000000')
+    expect(store().chats).toEqual([
+      { chatId: '10000000', phone: '79001234567', title: '79001234567', unreadCount: 0 },
+    ])
+  })
+
   it('setActiveChat resets unread of the selected chat only', () => {
     store().receiveIncoming(incoming())
     store().receiveIncoming(incoming({ idMessage: 'in-2', chatId: '111@c.us' }))
@@ -178,6 +206,100 @@ describe('receiveIncoming', () => {
   })
 })
 
+describe('read receipts', () => {
+  function sent(idMessage: string, timestamp = 500) {
+    vi.useFakeTimers()
+    vi.setSystemTime(timestamp)
+    const tempId = store().addOutgoing(CHAT, idMessage)
+    store().resolveOutgoing(tempId, { status: 'sent', idMessage })
+    vi.useRealTimers()
+  }
+  const statuses = () => store().messages[CHAT].map((m) => m.status)
+
+  it('moves statuses forward only', () => {
+    sent('out-1')
+    store().updateOutgoingStatus('out-1', 'delivered')
+    expect(statuses()).toEqual(['delivered'])
+    store().updateOutgoingStatus('out-1', 'read')
+    store().updateOutgoingStatus('out-1', 'delivered')
+    store().updateOutgoingStatus('out-1', 'failed')
+    expect(statuses()).toEqual(['read'])
+  })
+
+  it('ignores unknown ids and incoming messages', () => {
+    store().receiveIncoming(incoming())
+    const before = store().messages
+    store().updateOutgoingStatus('in-1', 'read')
+    store().updateOutgoingStatus('nope', 'read')
+    expect(store().messages).toBe(before)
+  })
+
+  it('a reply marks earlier sent messages of the chat as read', () => {
+    sent('out-1', 500)
+    sent('out-2', 2_000)
+    store().receiveIncoming(incoming({ timestamp: 1_000 }))
+    expect(store().messages[CHAT].map((m) => [m.id, m.status])).toEqual([
+      ['out-1', 'read'],
+      ['in-1', 'received'],
+      ['out-2', 'sent'],
+    ])
+  })
+
+  it('a reply does not touch failed messages or other chats', () => {
+    const tempId = store().addOutgoing(CHAT, 'x')
+    store().resolveOutgoing(tempId, { status: 'failed' })
+    store().addOutgoing('111@c.us', 'y')
+    store().receiveIncoming(incoming({ timestamp: Date.now() + 1_000 }))
+    expect(statuses()).toEqual(['failed', 'received'])
+    expect(store().messages['111@c.us'][0].status).toBe('pending')
+  })
+})
+
+describe('sync between tabs', () => {
+  function otherTabWrites(messages: Record<string, unknown[]>) {
+    const newValue = JSON.stringify({ chats: store().chats, messages, activeChatId: null })
+    window.dispatchEvent(
+      new StorageEvent('storage', { key: historyKey(creds.idInstance), newValue }),
+    )
+  }
+
+  it('does not lose a message sent here when another tab writes an older copy', () => {
+    store().login(creds)
+    store().openChat('79001234567')
+    const tempId = store().addOutgoing(CHAT, 'mine')
+    store().resolveOutgoing(tempId, { status: 'sent', idMessage: 'out-1' })
+    otherTabWrites({
+      [CHAT]: [
+        {
+          ...incoming(),
+          id: 'in-1',
+          direction: 'incoming',
+          status: 'received',
+          idMessage: undefined,
+        },
+      ],
+    })
+    expect(store().messages[CHAT].map((m) => m.id)).toEqual(['in-1', 'out-1'])
+    const saved = JSON.parse(localStorage.getItem(historyKey(creds.idInstance))!)
+    expect(saved.messages[CHAT]).toHaveLength(2)
+  })
+
+  it('ignores other instances and changes that add nothing', () => {
+    store().login(creds)
+    store().openChat('79001234567')
+    const before = store().messages
+    otherTabWrites({})
+    expect(store().messages).toBe(before)
+    window.dispatchEvent(
+      new StorageEvent('storage', {
+        key: historyKey('other'),
+        newValue: '{"chats":[],"messages":{}}',
+      }),
+    )
+    expect(store().messages).toBe(before)
+  })
+})
+
 describe('selectors', () => {
   it('sorts chats by last message, newest first; empty chats stay on top', () => {
     store().receiveIncoming(incoming({ idMessage: '1', chatId: 'old@c.us', timestamp: 1_000 }))
@@ -249,6 +371,20 @@ describe('persistence', () => {
     store().login(creds)
     expect(store().chats).toHaveLength(1)
     expect(store().messages[CHAT]).toHaveLength(1)
+  })
+
+  it('drops saved chats that were not opened by phone', () => {
+    store().login(creds)
+    store().openChat('79001234567', '10000000')
+    store().receiveIncoming(incoming({ chatId: '10000000' }))
+    store().receiveIncoming(incoming({ idMessage: 'in-2', chatId: '20000000' }))
+    store().setActiveChat('20000000')
+    store().logout()
+
+    store().login(creds)
+    expect(store().chats.map((c) => c.chatId)).toEqual(['10000000'])
+    expect(Object.keys(store().messages)).toEqual(['10000000'])
+    expect(store().activeChatId).toBeNull()
   })
 
   it('does not mix histories of different instances', () => {

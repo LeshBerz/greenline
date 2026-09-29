@@ -1,15 +1,19 @@
 import type { Message, MessageStatus } from '../types'
-import { AlertIcon, CheckIcon, ClockIcon } from './icons'
+import { AlertIcon, CheckIcon, ClockIcon, DoubleCheckIcon } from './icons'
 import { formatTime } from './format'
 import styles from './MessageBubble.module.css'
 
 export interface MessageBubbleProps {
   message: Message
+  /** If set, a failed outgoing message shows a "send again" button. */
+  onRetry?(messageId: string): void
 }
 
 const STATUS_LABELS: Partial<Record<MessageStatus, string>> = {
   pending: 'Отправляется',
   sent: 'Отправлено',
+  delivered: 'Доставлено',
+  read: 'Прочитано',
   failed: 'Не отправлено. Проверьте соединение и данные инстанса',
 }
 
@@ -24,14 +28,16 @@ function StatusIcon({ status }: { status: MessageStatus }) {
       title={label}
     >
       {status === 'pending' && <ClockIcon size={13} />}
-      {status === 'sent' && <CheckIcon size={15} />}
+      {(status === 'sent' || status === 'delivered') && <CheckIcon size={15} />}
+      {status === 'read' && <DoubleCheckIcon size={17} />}
       {status === 'failed' && <AlertIcon size={15} />}
     </span>
   )
 }
 
-export function MessageBubble({ message }: MessageBubbleProps) {
+export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
   const outgoing = message.direction === 'outgoing'
+  const canRetry = outgoing && message.status === 'failed' && onRetry !== undefined
   return (
     <div className={[styles.row, outgoing ? styles.outgoing : styles.incoming].join(' ')}>
       <div
@@ -51,6 +57,11 @@ export function MessageBubble({ message }: MessageBubbleProps) {
           {outgoing && <StatusIcon status={message.status} />}
         </span>
       </div>
+      {canRetry && (
+        <button type="button" className={styles.retry} onClick={() => onRetry(message.id)}>
+          Не отправлено. Повторить
+        </button>
+      )}
     </div>
   )
 }

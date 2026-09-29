@@ -1,7 +1,7 @@
 // Owner: State role.
 // The notification loop without React: easy to test with a mock client and fake timers.
 import type { GreenApiClient } from '../api/greenApi'
-import type { IncomingTextMessage } from '../types'
+import type { IncomingTextMessage, OutgoingStatusUpdate } from '../types'
 
 export const BACKOFF_BASE_MS = 1_000
 export const BACKOFF_MAX_MS = 30_000
@@ -30,6 +30,8 @@ function sleep(ms: number, signal: AbortSignal): Promise<void> {
 export interface PollingLoopOptions {
   /** Called on every network error before backing off. Defaults to console.warn. */
   onError?: (error: unknown, retryInMs: number) => void
+  /** Called for outgoingMessageStatus notifications (delivered/read receipts). */
+  onStatus?: (update: OutgoingStatusUpdate) => void
 }
 
 /**
@@ -73,12 +75,11 @@ export async function runPollingLoop(
     // Empty queue: the server already held the long poll, ask again right away.
     if (!notification) continue
 
-    if (notification.message) {
-      try {
-        onMessage(notification.message)
-      } catch (error) {
-        console.error('[greenline] onMessage failed', error)
-      }
+    try {
+      if (notification.message) onMessage(notification.message)
+      if (notification.status) options.onStatus?.(notification.status)
+    } catch (error) {
+      console.error('[greenline] notification handler failed', error)
     }
 
     try {
