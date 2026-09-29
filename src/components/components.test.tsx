@@ -102,6 +102,18 @@ describe('MessageBubble', () => {
     render(<MessageBubble message={{ ...base, status: 'read' }} />)
     expect(container.querySelectorAll('[aria-label="Прочитано"] path')).toHaveLength(2)
   })
+
+  it('offers to resend a failed message', () => {
+    const onRetry = vi.fn()
+    render(<MessageBubble message={{ ...base, status: 'failed' }} onRetry={onRetry} />)
+    const retry = [...container.querySelectorAll('button')].find((b) =>
+      b.textContent?.includes('Повторить'),
+    )!
+    act(() => retry.click())
+    expect(onRetry).toHaveBeenCalledWith('1')
+    render(<MessageBubble message={{ ...base, status: 'sent' }} onRetry={onRetry} />)
+    expect(container.querySelector('button')).toBeNull()
+  })
 })
 
 describe('NewChatDialog', () => {

@@ -14,6 +14,8 @@ export interface ChatWindowProps {
   /** Messages of the active chat, oldest first. */
   messages: Message[]
   onSend(text: string): void
+  /** Resends a failed outgoing message by its id. */
+  onRetry?(messageId: string): void
   /** Back to the chat list; the button is shown only on narrow screens (< 768px). */
   onBack?(): void
   /** Disables the input, e.g. while offline. */
@@ -29,6 +31,7 @@ export function ChatWindow({
   chat,
   messages,
   onSend,
+  onRetry,
   onBack,
   inputDisabled,
   autoFocusInput = true,
@@ -108,7 +111,7 @@ export function ChatWindow({
                       <span>{day}</span>
                     </div>
                   )}
-                  <MessageBubble message={m} />
+                  <MessageBubble message={m} onRetry={onRetry} />
                 </Fragment>
               )
             })}
