@@ -7,3 +7,9 @@ coverage
 .vscode/*
 !.vscode/extensions.json
 .idea
+
+# Local process notes and tooling (not part of the project)
+CLAUDE.md
+ROADMAP.md
+docs/tasks/
+.claude/
