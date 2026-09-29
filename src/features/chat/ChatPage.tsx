@@ -10,7 +10,6 @@ import {
   useChatStore,
 } from '../../store/chatStore'
 import type { Credentials } from '../../types'
-import { isPersonalChat } from './isPersonalChat'
 import { resolveChat } from './resolveChat'
 
 export function ChatPage({ credentials }: { credentials: Credentials }) {
@@ -30,12 +29,14 @@ export function ChatPage({ credentials }: { credentials: Credentials }) {
     logout,
   } = useChatStore.getState()
 
-  // Stops when the page unmounts on logout. Groups and channels are skipped (their
-  // notifications are still deleted from the queue by the polling loop).
+  // Stops when the page unmounts on logout. Only chats the user created by phone are shown:
+  // messages from other chats, groups and channels are skipped (the polling loop still
+  // deletes them from the queue).
   useNotificationPolling(
     client,
     (message) => {
-      if (isPersonalChat(message.chatId)) receiveIncoming(message)
+      const known = useChatStore.getState().chats.some((c) => c.chatId === message.chatId)
+      if (known) receiveIncoming(message)
     },
     (update) => updateOutgoingStatus(update.idMessage, update.status),
   )
@@ -63,16 +64,26 @@ export function ChatPage({ credentials }: { credentials: Credentials }) {
     setDialogError(undefined)
   }
 
-  async function handleSend(text: string) {
-    if (!activeChat) return
-    const tempId = addOutgoing(activeChat.chatId, text)
+  async function deliver(messageId: string, chatId: string, text: string) {
     try {
-      const { idMessage } = await client.sendMessage(activeChat.chatId, text)
-      resolveOutgoing(tempId, { status: 'sent', idMessage })
+      const { idMessage } = await client.sendMessage(chatId, text)
+      resolveOutgoing(messageId, { status: 'sent', idMessage })
     } catch (error) {
       console.warn('[greenline] sendMessage failed', error)
-      resolveOutgoing(tempId, { status: 'failed' })
+      resolveOutgoing(messageId, { status: 'failed' })
     }
+  }
+
+  function handleSend(text: string) {
+    if (!activeChat) return
+    void deliver(addOutgoing(activeChat.chatId, text), activeChat.chatId, text)
+  }
+
+  function handleRetry(messageId: string) {
+    const message = activeMessages.find((m) => m.id === messageId)
+    if (!message || message.status !== 'failed') return
+    resolveOutgoing(messageId, { status: 'pending' })
+    void deliver(messageId, message.chatId, message.text)
   }
 
   return (
@@ -95,6 +106,7 @@ export function ChatPage({ credentials }: { credentials: Credentials }) {
             chat={activeChat}
             messages={activeMessages}
             onSend={handleSend}
+            onRetry={handleRetry}
             onBack={() => setActiveChat(null)}
           />
         }
