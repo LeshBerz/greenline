@@ -30,6 +30,7 @@ export function mergeHistory(
 
   const messages: Record<string, Message[]> = {}
   for (const { chatId } of chats) {
+    if (!local.messages[chatId] && !remote.messages[chatId]) continue
     const remoteList = remote.messages[chatId] ?? []
     const remoteIds = new Set(remoteList.map((m) => m.id))
     const byId = new Map<string, Message>()
